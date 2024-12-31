@@ -5,27 +5,31 @@ RUN sed -i -e 's/deb.debian.org/archive.debian.org/g' \
            -e 's|security.debian.org|archive.debian.org/|g' \
            -e '/stretch-updates/d' /etc/apt/sources.list
 
-RUN apt-get update
-
+# Add MIPS architecture and install build dependencies
 RUN dpkg --add-architecture mips && \
-	apt-get update && \
-	apt-get -y install \
-	build-essential \
-	dpkg-cross \
-	g++-mips-linux-gnu \
-	git \
-	bison \
-	flex \
-	wget && \
-	rm -rf /var/lib/apt/lists/*
+        apt-get update && \
+        apt-get -y install \
+        build-essential \
+        dpkg-cross \
+        g++-mips-linux-gnu \
+        git \
+        bison \
+        flex \
+        wget && \
+        rm -rf /var/lib/apt/lists/*
 
+# BIRD args
 ENV CROSSCOMPILE="mips-linux-gnu"
-ARG BIRD_VERSION 
+ARG BIRD_VERSION
 
-RUN wget https://bird.network.cz/download/bird-$BIRD_VERSION.tar.gz --no-check-certificate && \
-	tar xzfv bird-$BIRD_VERSION.tar.gz && \
-	cd bird-$BIRD_VERSION && \	
-	./configure --host mips-linux-gnu --prefix=/config --sysconfdir=/config --runstatedir=/run --disable-client && \
+# Configure BIRD
+RUN wget https://bird.network.cz/download/bird-$BIRD_VERSION.tar.gz && \
+        tar xzfv bird-$BIRD_VERSION.tar.gz && \
+        cd bird-$BIRD_VERSION && \
+        ./configure --host=mips-linux-gnu --prefix=/config/custom/bird --sysconfdir=/config/custom/bird --runstatedir=/run --disable-client
+
+# Compile BIRD
+RUN cd bird-$BIRD_VERSION && \
 	make
 
 FROM scratch AS export
